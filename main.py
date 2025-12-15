@@ -67,19 +67,7 @@ def integrator_tesseract_demo():
                         use_plotly=True,
                     )
                     fig_3d.show()
-
-                    # Animated visualization
-                    fig_anim, anim = animate_trajectory(
-                        result["times"],
-                        result["x_positions"],
-                        result["y_positions"],
-                        result["z_positions"],
-                        scenario["velocity"],
-                        scenario["roughness"],
-                        scenario["seam_angle"]
-                    )
-                    fig_anim.show()
-                    print("  ✓ Plots displayed")
+                    print("  ✓ Plot displayed")
 
                     # Store results for comparison
                     all_results.append({

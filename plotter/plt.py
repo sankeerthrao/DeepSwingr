@@ -51,6 +51,7 @@ def compare_deliveries(deliveries):
 
 def animate_trajectory(t, x, y, z, initial_velocity, roughness, seam_angle):
     """Create animated visualization of ball trajectory."""
+
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
 
     # Top view
@@ -79,10 +80,8 @@ def animate_trajectory(t, x, y, z, initial_velocity, roughness, seam_angle):
     # Initialize plots
     line1, = ax1.plot([], [], 'b-', linewidth=2, alpha=0.6)
     ball1, = ax1.plot([], [], 'ro', markersize=10)
-
     line2, = ax2.plot([], [], 'b-', linewidth=2, alpha=0.6)
     ball2, = ax2.plot([], [], 'ro', markersize=10)
-
     time_text = ax1.text(0.02, 0.95, '', transform=ax1.transAxes)
 
     def init():
