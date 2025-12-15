@@ -69,10 +69,10 @@ class SimplePhysicsModel(eqx.Module):
 
 
 def load_weights():
-    import physics
+    from physics import CricketBallForceNetwork
 
     # Create model instance with dummy inputs for shape
-    model = physics.CricketBallForceNetwork()
+    model = CricketBallForceNetwork()
 
     # Load the saved weights file
     if not weights_path.is_file():
