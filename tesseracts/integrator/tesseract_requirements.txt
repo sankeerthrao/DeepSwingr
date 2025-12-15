@@ -4,6 +4,7 @@
 # Add Python requirements like this:
 jax[cpu]
 equinox
+tesseract-core
 
 # This may contain private dependencies via SSH URLs:
 # git+ssh://git@github.com/username/repo.git@branch
