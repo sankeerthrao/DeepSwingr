@@ -1,3 +1,4 @@
-tesseract-core==1.2.0
-tesseract-jax==0.2.2
-jax[cpu]==0.8.1
+tesseract-core
+jax[cpu]
+plotly
+matplotlib
