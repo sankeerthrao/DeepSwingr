@@ -105,9 +105,11 @@ def integrator_tesseract_demo():
             # Show comparison of all deliveries
             if len(all_results) > 1:
                 print("\n📊 Generating delivery comparison...")
+                # Use stored results for comparison
                 compare_deliveries([
                     (r["name"], r["velocity"], r["angle"],
-                     r["roughness"], r["seam_angle"])
+                     r["roughness"], r["seam_angle"],
+                     r["times"], r["x"], r["y"], r["z"])
                     for r in all_results
                 ])
                 print("  ✓ Comparison displayed")

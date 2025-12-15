@@ -12,26 +12,12 @@ except ImportError:
     print("Note: Install plotly for interactive 3D plots: pip install plotly")
 
 
-def compare_deliveries(trained_state):
+def compare_deliveries(deliveries):
     """Compare multiple delivery types side by side."""
-
-    deliveries = [
-        # Neg angle + low rough = outswing (+y)
-        ('Conv. Outswing', 44.4, 0, 0.3, -20),
-        # Pos angle + low rough = inswing (-y)
-        ('Conv. Inswing', 41.7, 0, 0.5, 40),
-        # Neg angle + high rough = reverse inswing (-y)
-        ('Rev. Inswing', 41.7, 0, 0.85, -25),
-        # Pos angle + high rough = reverse outswing (+y)
-        ('Rev. Outswing', 36.1, 2, 0.85, 20),
-    ]
-
     fig, axes = plt.subplots(2, 2, figsize=(15, 12))
     axes = axes.flatten()
 
-    for idx, (name, vel, ang, rough, seam) in enumerate(deliveries):
-        t, x, y, z, _ = simulate_trajectory(
-            trained_state, vel, ang, rough, seam)
+    for idx, (name, vel, ang, rough, seam, t, x, y, z) in enumerate(deliveries):
 
         ax = axes[idx]
         ax.plot(x, y, linewidth=2, label='Trajectory')
