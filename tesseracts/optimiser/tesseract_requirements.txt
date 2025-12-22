@@ -3,10 +3,8 @@
 
 # Add Python requirements like this:
 jax[cpu]
-equinox
-flax
-optax
 tesseract-core
+tesseract-jax
 scipy
 
 # This may contain private dependencies via SSH URLs:
