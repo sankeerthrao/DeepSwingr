@@ -71,30 +71,45 @@ def create_objective_function(fixed_vars: Dict[str, float], swing_tesseract, swi
 
         # Combine fixed and variable parameters
         all_params = {**fixed_vars, **params_dict}
+        
+        # Log parameters being sent to swing
+        print(f"DEBUG: Objective calling swing with params: {all_params}")
 
         # Call swing tesseract with required URLs
         try:
-            result = swing_tesseract.apply({
-                "initial_velocity": all_params["initial_velocity"],
-                "release_angle": all_params["release_angle"],
-                "roughness": all_params["roughness"],
-                "seam_angle": all_params["seam_angle"],
+            request_body = {
+                "initial_velocity": float(all_params["initial_velocity"]),
+                "release_angle": float(all_params["release_angle"]),
+                "roughness": float(all_params["roughness"]),
+                "seam_angle": float(all_params["seam_angle"]),
                 "physics_url": physics_url,
                 "integrator_url": integrator_url
-            })
+            }
+            print(f"DEBUG: Swing request body: {request_body}")
+            
+            result = swing_tesseract.apply(request_body)
+            print(f"DEBUG: Swing returned: {result}")
+            
             deviation = result['maximum_deviation']
 
             # For "in" swing, we want negative deviation (towards batsman)
             # For "out" swing, we want positive deviation (away from batsman)
             # For "reverse" swing, we want maximum absolute deviation
             if swing_type == "in":
-                return -deviation  # Minimize negative deviation (maximize towards batsman)
+                score = -deviation  # Minimize negative deviation (maximize towards batsman)
             elif swing_type == "out":
-                return deviation   # Maximize positive deviation (away from batsman)
+                score = deviation   # Maximize positive deviation (away from batsman)
             else:  # reverse
-                return -abs(deviation)  # Maximize absolute deviation
+                score = -abs(deviation)  # Maximize absolute deviation
+            
+            print(f"DEBUG: Objective score: {score}")
+            return float(score)
 
         except Exception as e:
+            # Log the error for debugging
+            print(f"DEBUG: Objective function error for params {all_params}: {e}")
+            import traceback
+            traceback.print_exc()
             # Return large penalty for invalid configurations
             return 1000.0
 
@@ -103,17 +118,17 @@ def create_objective_function(fixed_vars: Dict[str, float], swing_tesseract, swi
 
 def optimize_swing(inputs: InputSchema) -> OutputSchema:
     """Optimize swing parameters using JAX"""
+    print(f"DEBUG: Starting optimize_swing with inputs: {inputs}")
 
     # Connect to swing tesseract
     from tesseract_core import Tesseract
+    print(f"DEBUG: Connecting to swing tesseract at {inputs.swing_url}")
     swing_tesseract = Tesseract.from_url(inputs.swing_url)
 
     # Get optimization variable names and bounds
     opt_vars = list(inputs.optimization_variables.keys())
     bounds = [inputs.optimization_variables[var] for var in opt_vars]
-
-    # Convert bounds to JAX arrays
-    bounds_array = jnp.array(bounds)
+    print(f"DEBUG: Optimization variables: {opt_vars}, bounds: {bounds}")
 
     # Create objective function
     objective = create_objective_function(
@@ -126,27 +141,40 @@ def optimize_swing(inputs: InputSchema) -> OutputSchema:
 
     # JAX-compatible objective for optimization
     def jax_objective(x):
+        print(f"DEBUG: jax_objective called with x={x}")
         params_dict = {opt_vars[i]: float(x[i]) for i in range(len(opt_vars))}
-        return objective(params_dict)
+        val = objective(params_dict)
+        print(f"DEBUG: jax_objective returning {val}")
+        return val
 
     # Use differential evolution for global optimization (works well for bounded problems)
     from scipy.optimize import differential_evolution
 
     # Define bounds for scipy
     scipy_bounds = [(float(b[0]), float(b[1])) for b in bounds]
+    print(f"DEBUG: Scipy bounds: {scipy_bounds}")
 
-    # Run optimization
-    result = differential_evolution(
-        jax_objective,
-        bounds=scipy_bounds,
-        maxiter=50,
-        popsize=10,
-        seed=42
-    )
+    # Run optimization with more conservative settings
+    try:
+        print("DEBUG: Starting differential_evolution...")
+        result = differential_evolution(
+            jax_objective,
+            bounds=scipy_bounds,
+            maxiter=5,  # Further reduced for debugging
+            popsize=3,   # Further reduced for debugging
+            seed=42
+        )
+        print(f"DEBUG: differential_evolution finished. Success: {result.success}, Message: {result.message}")
+    except Exception as e:
+        print(f"DEBUG: differential_evolution failed: {e}")
+        import traceback
+        traceback.print_exc()
+        raise
 
     # Extract optimal parameters
     optimal_params = {opt_vars[i]: float(result.x[i]) for i in range(len(opt_vars))}
-    max_deviation = -result.fun  # Convert back from minimization to maximization
+    max_deviation = -float(result.fun)  # Convert back from minimization to maximization
+    print(f"DEBUG: Optimal params: {optimal_params}, max_deviation: {max_deviation}")
 
     # Check if swing is possible (especially for reverse swing)
     # If the maximum deviation is very small, swing might not be possible
