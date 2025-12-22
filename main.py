@@ -23,20 +23,10 @@ def show_trajectory(initial_velocity=35.0, release_angle=5.0, roughness=0.8, sea
         seam_angle: Seam angle in degrees [-90, 90]
         physics_url: Physics backend URL
     """
-    network_name = "tesseract_network"
-
     try:
-        print(f"🚀 Setting up Docker environment...")
-        integrator, swing, optimizer = setup_tesseracts(network_name)
+        integrator, swing, optimizer = setup_tesseracts("tesseract_network")
 
-        print(f"📡 Connecting to integrator...")
         with integrator:
-            print("\n📊 Computing trajectory...")
-            print(f"  Speed: {initial_velocity:.1f} m/s")
-            print(f"  Release angle: {release_angle:.1f}°")
-            print(f"  Roughness: {roughness:.1f}")
-            print(f"  Seam angle: {seam_angle:.1f}°")
-
             # Get trajectory
             params = {
                 "initial_velocity": initial_velocity,
@@ -46,9 +36,7 @@ def show_trajectory(initial_velocity=35.0, release_angle=5.0, roughness=0.8, sea
                 "physics_url": physics_url
             }
 
-            print(f"🔄 Calling integrator with params: {params}")
             result = integrator.apply(params)
-            print(f"✅ Integrator returned result with {len(result.get('times', []))} time points")
 
             # Plot trajectory
             fig = plot_trajectory_3d(
@@ -64,11 +52,8 @@ def show_trajectory(initial_velocity=35.0, release_angle=5.0, roughness=0.8, sea
             )
             fig.show()
 
-            # Print summary
-            final_y = result["y_positions"][-1]
-            print(f"  Final lateral deviation: {final_y:.4f} m")
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"Error: {e}")
     finally:
         cleanup_containers()
 
@@ -90,76 +75,76 @@ def plot_optimal(roughness=0.8, release_angle=5.0, swing_type="reverse",
     network_name = "tesseract_network"
 
     try:
-        _, swing, optimizer = setup_tesseracts(network_name)
+        integrator, swing, optimizer = setup_tesseracts(network_name)
 
         with optimizer:
-            print(f"\n🎯 Optimizing {swing_type} swing...")
-            print(f"  Roughness: {roughness:.1f}")
-            print(f"  Release angle: {release_angle:.1f}°")
+            print(f"Optimizing {swing_type} swing...")
+
             # Create parameter grid
             speeds = np.linspace(speed_range[0], speed_range[1], n_points)
-            angles = np.linspace(angle_range[0], angle_range[1], n_points)
 
             # Store results
-            optimal_deviations = np.zeros((n_points, n_points))
+            optimal_deviations = np.zeros(n_points)
 
             for i, speed in enumerate(speeds):
-                for j, angle in enumerate(angles):
-                    try:
-                        # Optimize for this fixed speed/angle combination
-                        opt_result = optimizer.apply({
-                            "fixed_variables": {
-                                "initial_velocity": speed,
-                                "release_angle": release_angle,
-                                "roughness": roughness
-                            },
-                            "optimization_variables": {
-                                "seam_angle": [angle_range[0], angle_range[1]]  # Optimize seam angle
-                            },
-                            "swing_type": swing_type,
-                            "swing_url": "http://swing:8000",
-                            "physics_url": "http://simplephysics:8000",
-                            "integrator_url": "http://integrator:8000"
-                        })
+                try:
+                    # Prepare optimization parameters
+                    opt_params = {
+                        "fixed_variables": {
+                            "initial_velocity": speed,
+                            "release_angle": release_angle,
+                            "roughness": roughness
+                        },
+                        "optimization_variables": {
+                            "seam_angle": [angle_range[0], angle_range[1]]
+                        },
+                        "swing_type": swing_type,
+                        "swing_url": "http://swing:8000",
+                        "physics_url": "http://simplephysics:8000",
+                        "integrator_url": "http://integrator:8000"
+                    }
 
-                        optimal_deviations[i, j] = opt_result["maximum_deviation"]
+                    # Optimize seam_angle for this fixed speed to maximize swing
+                    opt_result = optimizer.apply(opt_params)
 
-                    except Exception as e:
-                        print(f"⚠️  Optimization failed for speed={speed:.1f}, angle={angle:.1f}: {e}")
-                        optimal_deviations[i, j] = np.nan
+                    if opt_result and "maximum_deviation" in opt_result:
+                        optimal_deviations[i] = opt_result["maximum_deviation"]
+                    else:
+                        optimal_deviations[i] = np.nan
+
+                except Exception as e:
+                    print(f"Optimization failed for speed={speed:.1f}: {e}")
+                    optimal_deviations[i] = np.nan
 
             # Create plot
-            fig, ax = plt.subplots(figsize=(10, 8))
-
-            # Create meshgrid
-            SPEED, ANGLE = np.meshgrid(speeds, angles)
-
-            # Plot contour
-            cs = ax.contourf(SPEED, ANGLE, optimal_deviations.T, levels=20, cmap='viridis')
+            fig, ax = plt.subplots(figsize=(10, 6))
+            ax.plot(speeds, optimal_deviations, 'b-o', linewidth=2, markersize=6)
             ax.set_xlabel('Initial Velocity (m/s)')
-            ax.set_ylabel('Fixed Seam Angle (degrees)')
-            ax.set_title(f'Optimal {swing_type.capitalize()} Swing (Roughness: {roughness:.1f})')
-            plt.colorbar(cs, ax=ax, label='Maximum Deviation (cm)')
+            ax.set_ylabel('Maximum Deviation (cm)')
+            ax.set_title(f'Optimal {swing_type.capitalize()} Swing vs Speed (Roughness: {roughness:.1f})')
+            ax.grid(True, alpha=0.3)
 
             # Mark optimal point
-            max_idx = np.unravel_index(np.nanargmax(optimal_deviations), optimal_deviations.shape)
-            max_speed, max_angle = speeds[max_idx[0]], angles[max_idx[1]]
-            max_dev = optimal_deviations[max_idx]
+            valid_indices = ~np.isnan(optimal_deviations)
+            if np.any(valid_indices):
+                max_idx = np.nanargmax(optimal_deviations)
+                max_speed = speeds[max_idx]
+                max_dev = optimal_deviations[max_idx]
 
-            ax.plot(max_speed, max_angle, 'ro', markersize=10, label=f'Optimal: {max_dev:.2f} cm')
-            ax.legend()
+                ax.plot(max_speed, max_dev, 'ro', markersize=10, label=f'Global optimum: {max_dev:.2f} cm')
+                ax.legend()
 
-            plt.tight_layout()
-            plt.show()
+                plt.tight_layout()
+                plt.show()
 
-            print(f"\n💡 Global optimum found:")
-            print(f"  Speed: {max_speed:.1f} m/s")
-            print(f"  Seam angle: {max_angle:.1f}°")
-            print(f"  Maximum deviation: {max_dev:.2f} cm")
+                print("Global optimum found:")
+                print(f"  Speed: {max_speed:.1f} m/s")
+                print(f"  Maximum deviation: {max_dev:.2f} cm")
+            else:
+                print("No valid optimization results found")
+                plt.close(fig)
     except Exception as e:
-        print(f"❌ Error: {e}")
-        import traceback
-        traceback.print_exc()
+        print(f"Error: {e}")
     finally:
         cleanup_containers()
 
@@ -178,9 +163,6 @@ def interactive_menu():
             choice = input("\nEnter choice (1-3): ").strip()
 
             if choice == "1":
-                print("\n📊 Show Trajectory")
-                print("-" * 20)
-
                 # Get parameters with defaults
                 vel = input("Initial velocity (m/s) [35.0]: ").strip()
                 vel = float(vel) if vel else 35.0
@@ -197,9 +179,6 @@ def interactive_menu():
                 show_trajectory(vel, angle, rough, seam)
 
             elif choice == "2":
-                print("\n🎯 Plot Optimal Swing")
-                print("-" * 25)
-
                 # Get parameters with defaults
                 rough = input("Roughness [0.8]: ").strip()
                 rough = float(rough) if rough else 0.8
@@ -210,7 +189,6 @@ def interactive_menu():
                 swing_type = input("Swing type (in/out/reverse) [reverse]: ").strip().lower()
                 swing_type = swing_type if swing_type in ["in", "out", "reverse"] else "reverse"
 
-                print(f"Generating plot for {swing_type} swing...")
                 plot_optimal(rough, angle, swing_type)
 
             elif choice == "3":
