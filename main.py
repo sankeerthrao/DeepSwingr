@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from helper.docker import get_tesseracts, cleanup_containers
-from plotter.plt import plot_trajectory_3d
+from plotter.plt import plot_trajectory_3d, plot_optimization_results
 
 def show_trajectory(v=35.0, a=5.0, r=0.8, s=30.0, url="http://simplephysics:8000"):
     """Show trajectory for given parameters"""
@@ -14,12 +14,13 @@ def show_trajectory(v=35.0, a=5.0, r=0.8, s=30.0, url="http://simplephysics:8000
         print(f"Error: {e}")
 
 def plot_optimal(r=0.8, a=5.0, swing_type="out", speed_range=[30, 40], n=5):
-    """Plot optimal swing vs speed"""
+    """Plot optimal swing and seam angle vs speed"""
     try:
         _, _, opt = get_tesseracts()
         print(f"Optimizing {swing_type} swing...")
         speeds = np.linspace(speed_range[0], speed_range[1], n)
         devs = []
+        angles = []
         for i, v in enumerate(speeds):
             print(f"  [{i+1}/{n}] {v:.1f} m/s:", end=" ", flush=True)
             try:
@@ -29,22 +30,18 @@ def plot_optimal(r=0.8, a=5.0, swing_type="out", speed_range=[30, 40], n=5):
                     "swing_type": swing_type
                 })
                 val = res["maximum_deviation"]
+                angle = res["optimal_parameters"]["seam_angle"]
                 devs.append(val)
-                print(f"{val:.2f} cm")
+                angles.append(angle)
+                print(f"{val:.2f} cm (at {angle:.1f}°)")
             except Exception as e:
                 print(f"Failed: {e}")
                 devs.append(np.nan)
+                angles.append(np.nan)
         
         devs = np.array(devs)
-        valid = ~np.isnan(devs)
-        if np.any(valid):
-            plt.figure(figsize=(8, 5))
-            plt.plot(speeds[valid], devs[valid], 'b-o')
-            plt.xlabel("Speed (m/s)")
-            plt.ylabel("Max Deviation (cm)")
-            plt.title(f"Optimal {swing_type.capitalize()} Swing (r={r})")
-            plt.grid(True, alpha=0.3)
-            plt.show()
+        angles = np.array(angles)
+        plot_optimization_results(speeds, devs, angles, swing_type, r)
     except Exception as e:
         print(f"Error: {e}")
 
