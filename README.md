@@ -1,10 +1,16 @@
-# Cricket Ball Swing Simulator
+# DeepSwingr: A Differentiable Framework for Cricket Ball Swing Optimization
+
+<p align="center">
+  <img src="assets/logo.png" alt="DeepSwingr Logo" width="300"/>
+</p>
 
 A modular, differentiable simulation of cricket ball trajectory and swing using [Tesseract Core](https://github.com/pasteurlabs/tesseract-core) and [Tesseract-JAX](https://github.com/pasteurlabs/tesseract-jax).
 
 ## System Architecture
 
-![System Architecture](assets/deepswingr_architecture.png)
+<p align="center">
+  <img src="assets/deepswingr_architecture.png" alt="DeepSwingr Logo" width="500"/>
+</p>
 
 The project follows a highly modular architecture where different physical components are isolated into independent **Tesseracts**:
 
@@ -13,10 +19,35 @@ The project follows a highly modular architecture where different physical compo
 3.  **Swing Logic (`swing`)**: A high-level tesseract that orchestrates the integrator and physics backend to determine the final deviation of the ball.
 4.  **Optimiser (`optimiser`)**: Searches for optimal parameters (e.g., the best seam angle for maximum swing) by interacting with the `swing` tesseract.
 
+## ML Proxies for Physics
+
+This project utilizes **Machine Learning Proxies** to achieve high-performance, differentiable physics simulations.
+
+Instead of running a computationally expensive Navier-Stokes solver (CFD) during every step of the trajectory integration, we use neural networks that act as surrogates for the underlying fluid dynamics. These models learn the complex mapping between physical parameters—such as surface roughness, seam angle, and Reynolds number—and the resulting aerodynamic forces (drag, lift, and side force).
+
+### Proxy Training
+
+The `trainall.sh` script automates the generation of these ML proxies. When executed, it:
+
+1.  Launches a **differentiable CFD solver** (powered by `jax-cfd`) to simulate flow fields around the ball.
+2.  Runs a training loop where the neural network is optimized to match the forces computed by the CFD solver.
+3.  Saves the learned weights as `.msgpack` files, which are then packaged into the Tesseracts for high-speed inference.
+
+Additionally, `trainall.sh` trains a **lightweight `simplephysics` model** that serves as a simpler, faster representative of the same physical problem.
+
+### Differentiable Forward Pass
+
+A critical advantage of this approach is that the forward pass of our ML models is built using **Flax**, **Equinox**, and **JAX**. Because these libraries are designed for differentiable programming, the entire Tesseract pipeline remains **end-to-end differentiable**.
+
+When you call `.jacobian()` or `.vjp()` on a Tesseract, the gradients are propagated directly through the neural network layers. This allows you to perform advanced tasks like:
+
+- **Gradient-based optimization**: Finding the exact seam angle for maximum swing in just a few iterations.
+- **Sensitivity analysis**: Understanding how small changes in surface roughness affect the ball's final position.
+
 ## Key Features
 
 - **Modular Design**: Each component is a containerized Tesseract, allowing for easy swapping (e.g., replacing `simplephysics` with a neural-network-based `jaxphysics`).
-- **Differentiable Programming**: By using JAX, Flax, and Equinox, the `jaxphysics` tesseract provides automatic differentiation (AD) endpoints. This allows for obtaining exact **Jacobians** via the Tesseract SDK, enabling gradient-based optimization and sensitivity analysis.
+- **End-to-End AD**: Full support for JVP/VJP across the entire pipeline, from high-level swing logic down to the ML-based physics proxies.
 - **Apache 2.0 Licensed**: All core libraries and this template are released under the Apache License 2.0, ensuring freedom for both academic and commercial use.
 
 ## Get Started
