@@ -174,19 +174,81 @@ def animate_trajectory(t, x, y, z, initial_velocity, roughness, seam_angle):
 
 
 def plot_trajectory_3d(t, x, y, z, velocities, initial_velocity, roughness, seam_angle,
-                       use_plotly=True, all_trajectories=None):
-    """Create 3D visualization of ball trajectory with optional comparison."""
+                       use_plotly=True):
+    """Create 3D visualization of ball trajectory."""
 
-    # If multiple trajectories provided, plot them together
+    # Interactive 3D plot using Plotly
     if use_plotly and PLOTLY_AVAILABLE:
-        if all_trajectories is not None and len(all_trajectories) > 1:
-            fig_interactive = plot_trajectory_3d_interactive_multi(
-                all_trajectories, initial_velocity, roughness, seam_angle)
-        else:
-            fig_interactive = plot_trajectory_3d_interactive(
-                x, y, z, initial_velocity, roughness, seam_angle)
-        if fig_interactive is not None:
-            return fig_interactive
+        traces = []
+        
+        # Trajectory line
+        traces.append(go.Scatter3d(
+            x=x, y=y, z=z,
+            mode='lines',
+            line=dict(color='blue', width=6),
+            name='Trajectory',
+            hovertemplate='Distance: %{x:.2f}m<br>Lateral: %{y:.2f}m<br>Height: %{z:.2f}m<extra></extra>'
+        ))
+
+        # Release point
+        traces.append(go.Scatter3d(
+            x=[x[0]], y=[y[0]], z=[z[0]],
+            mode='markers',
+            marker=dict(size=8, color='green', symbol='circle'),
+            name='Release',
+            hovertext=f'Initial Speed: {initial_velocity*3.6:.1f} km/h'
+        ))
+
+        # Landing point
+        traces.append(go.Scatter3d(
+            x=[x[-1]], y=[y[-1]], z=[z[-1]],
+            mode='markers',
+            marker=dict(size=8, color='red', symbol='x'),
+            name='Landing',
+            hovertext=f'Total Swing: {abs(y[-1]-y[0])*100:.1f} cm'
+        ))
+
+        # Pitch outline
+        pitch_x = [0, 20.12, 20.12, 0, 0]
+        pitch_y_left = [-1.22, -1.22, -1.22, -1.22, -1.22]
+        pitch_y_right = [1.22, 1.22, 1.22, 1.22, 1.22]
+        pitch_z = [0, 0, 0, 0, 0]
+
+        traces.append(go.Scatter3d(
+            x=pitch_x, y=pitch_y_left, z=pitch_z,
+            mode='lines', line=dict(color='brown', width=2),
+            showlegend=False, hoverinfo='skip'
+        ))
+
+        traces.append(go.Scatter3d(
+            x=pitch_x, y=pitch_y_right, z=pitch_z,
+            mode='lines', line=dict(color='brown', width=2),
+            showlegend=False, hoverinfo='skip'
+        ))
+
+        traces.append(go.Scatter3d(
+            x=[0, 20.12], y=[0, 0], z=[0, 0],
+            mode='lines', line=dict(color='black', width=1, dash='dash'),
+            showlegend=False, hoverinfo='skip'
+        ))
+
+        fig = go.Figure(data=traces)
+
+        fig.update_layout(
+            title=f'Interactive 3D Ball Trajectory<br><sub>Roughness: {roughness:.2f}, Seam: {seam_angle:.1f}°, Speed: {initial_velocity*3.6:.1f} km/h</sub>',
+            scene=dict(
+                xaxis=dict(title='Distance (m)', range=[0, 22]),
+                yaxis=dict(title='Lateral (m)', range=[-1.5, 1.5]),
+                zaxis=dict(title='Height (m)', range=[0, 3]),
+                aspectmode='manual',
+                aspectratio=dict(x=2, y=0.5, z=0.3),
+                camera=dict(eye=dict(x=1.5, y=-1.5, z=0.8))
+            ),
+            width=900,
+            height=600,
+            margin=dict(l=0, r=0, b=0, t=50)
+        )
+        return fig
 
     # Fallback to matplotlib 2D plots
     fig_2d = plt.figure(figsize=(15, 10))
@@ -269,91 +331,6 @@ Results:
 
     plt.tight_layout()
     return fig_2d
-
-
-def plot_trajectory_3d_interactive_multi(trajectories, initial_velocity, roughness, seam_angle):
-    """Create interactive 3D plot with multiple trajectories."""
-    if not PLOTLY_AVAILABLE:
-        return None
-
-    traces = []
-    colors = ['blue', 'red', 'green', 'orange']
-
-    for idx, traj in enumerate(trajectories):
-        x, y, z = traj['x'], traj['y'], traj['z']
-        name = traj['name']
-        color = colors[idx % len(colors)]
-
-        # Trajectory line
-        traces.append(go.Scatter3d(
-            x=x, y=y, z=z,
-            mode='lines',
-            line=dict(color=color, width=4),
-            name=name,
-            hovertemplate=f'{name}<br>Distance: %{{x:.2f}}m<br>Lateral: %{{y:.2f}}m<br>Height: %{{z:.2f}}m<extra></extra>'
-        ))
-
-        # Landing point
-        traces.append(go.Scatter3d(
-            x=[x[-1]], y=[y[-1]], z=[z[-1]],
-            mode='markers',
-            marker=dict(size=6, color=color, symbol='x'),
-            showlegend=False,
-            hovertext=f'{name} landing: {abs(y[-1]-y[0])*100:.1f} cm swing'
-        ))
-
-    # Release point (same for all)
-    x0, y0, z0 = trajectories[0]['x'][0], trajectories[0]['y'][0], trajectories[0]['z'][0]
-    traces.append(go.Scatter3d(
-        x=[x0], y=[y0], z=[z0],
-        mode='markers',
-        marker=dict(size=8, color='green', symbol='circle'),
-        name='Release',
-        hovertext=f'Release: {initial_velocity*3.6:.1f} km/h'
-    ))
-
-    # Pitch outline
-    pitch_x = [0, 20.12, 20.12, 0, 0]
-    pitch_y_left = [-1.22, -1.22, -1.22, -1.22, -1.22]
-    pitch_y_right = [1.22, 1.22, 1.22, 1.22, 1.22]
-    pitch_z = [0, 0, 0, 0, 0]
-
-    traces.append(go.Scatter3d(
-        x=pitch_x, y=pitch_y_left, z=pitch_z,
-        mode='lines', line=dict(color='brown', width=2),
-        showlegend=False, hoverinfo='skip'
-    ))
-
-    traces.append(go.Scatter3d(
-        x=pitch_x, y=pitch_y_right, z=pitch_z,
-        mode='lines', line=dict(color='brown', width=2),
-        showlegend=False, hoverinfo='skip'
-    ))
-
-    traces.append(go.Scatter3d(
-        x=[0, 20.12], y=[0, 0], z=[0, 0],
-        mode='lines', line=dict(color='black', width=1, dash='dash'),
-        showlegend=False, hoverinfo='skip'
-    ))
-
-    fig = go.Figure(data=traces)
-
-    fig.update_layout(
-        title=f'Simplephysics vs Jaxphysics<br><sub>Roughness: {roughness:.2f}, Seam: {seam_angle:.0f}°, Speed: {initial_velocity*3.6:.0f} km/h</sub>',
-        scene=dict(
-            xaxis=dict(title='Distance (m)', range=[0, 22]),
-            yaxis=dict(title='Lateral (m)', range=[-2, 2]),
-            zaxis=dict(title='Height (m)', range=[0, 3]),
-            aspectmode='manual',
-            aspectratio=dict(x=2, y=0.5, z=0.3),
-            camera=dict(eye=dict(x=1.5, y=-1.5, z=0.8))
-        ),
-        width=1000,
-        height=700,
-        hovermode='closest'
-    )
-
-    return fig
 
 
 def plot_optimization_results(speeds, devs, angles, swing_type, roughness):
