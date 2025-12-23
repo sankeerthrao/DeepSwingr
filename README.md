@@ -1,104 +1,87 @@
-# Tesseract Hackathon Template
+# Cricket Ball Swing Simulator
 
-A ready-to-use template for building projects with [Tesseract Core](https://github.com/pasteurlabs/tesseract-core) and [Tesseract-JAX](https://github.com/pasteurlabs/tesseract-jax), featuring two interacting tesseracts that demonstrate vector scaling and similarity computation. Intended as a starting point for participants of the [Tesseract Hackathon](link TODO).
+A modular, differentiable simulation of cricket ball trajectory and swing using [Tesseract Core](https://github.com/pasteurlabs/tesseract-core) and [Tesseract-JAX](https://github.com/pasteurlabs/tesseract-jax).
 
-> [!WARNING]
-> Using this template is *not* required to participate in the Hackathon. You may use any tools at your disposal, including [Tesseract Core](https://github.com/pasteurlabs/tesseract-core), [Tesseract-JAX](https://github.com/pasteurlabs/tesseract-jax), and [Tesseract-Streamlit](https://github.com/pasteurlabs/tesseract-streamlit) — or composing Tesseracts via `docker run` calls in a glorified shell script. Your imagination is the limit!
+## System Architecture
 
-#### See also
-- [Tesseract Core Documentation](https://github.com/pasteurlabs/tesseract-core)
-- [Tesseract-JAX Documentation](https://github.com/pasteurlabs/tesseract-jax)
-- [Tesseract showcase](https://si-tesseract.discourse.group/c/showcase/11)
-- [Get help @ Tesseract User Forums](https://si-tesseract.discourse.group/)
+![System Architecture](assets/deepswingr_architecture.png)
 
-## Overview
+The project follows a highly modular architecture where different physical components are isolated into independent **Tesseracts**:
 
-This template demonstrates how to:
-1. Define Tesseracts ([`tesseracts/*`](tesseracts)).
-2. Build them locally ([`buildall.sh`](buildall.sh)).
-3. Serve Tesseracts locally, and compose them into a (differentiable) pipeline via the [Tesseract Core SDK](https://docs.pasteurlabs.ai/projects/tesseract-core/latest/content/api/tesseract-api.html) and [Tesseract-JAX](https://github.com/pasteurlabs/tesseract-jax) ([`main.py`](main.py)).
+1.  **Physics Backend (`simplephysics` / `jaxphysics`)**: Computes forces (drag, lift, side) acting on the ball based on its state (velocity, spin, seam angle, roughness).
+2.  **Integrator (`integrator`)**: Performs numerical integration of the equations of motion to predict the ball's trajectory.
+3.  **Swing Logic (`swing`)**: A high-level tesseract that orchestrates the integrator and physics backend to determine the final deviation of the ball.
+4.  **Optimiser (`optimiser`)**: Searches for optimal parameters (e.g., the best seam angle for maximum swing) by interacting with the `swing` tesseract.
 
-### Included Tesseracts
+## Key Features
 
-Example Tesseracts are minimal and meant as starting point for you to build upon.
-
-1. scaler ([`tesseracts/scaler`](tesseracts/scaler))
-   - Scales input vectors by a given factor.
-   - Implements a vector-Jacobian product by hand for autodiff.
-2. dotproduct ([`tesseracts/dotproduct`](tesseracts/dotproduct))
-   - Computes dot product between two vectors.
-   - Calculates cosine similarity.
-   - Uses the [Tesseract JAX recipe](https://docs.pasteurlabs.ai/projects/tesseract-core/latest/content/creating-tesseracts/create.html#initialize-a-new-tesseract) to enable automatic differentiation.
-
-### Pipeline Demo
-
-The example script [`main.py`](main.py) demonstrates two ways to compose Tesseracts into pipelines.
-
-#### Path 1: Calling Tesseracts manually
-
-- Call Tesseracts via [Tesseract Core SDK](https://docs.pasteurlabs.ai/projects/tesseract-core/latest/content/api/tesseract-api.html).
-
-#### Path 2: Composing Tesseracts with Tesseract-JAX
-
-- Wrap Tesseract calls in a differentiable JAX function using [Tesseract-JAX](https://github.com/pasteurlabs/tesseract-jax).
+- **Modular Design**: Each component is a containerized Tesseract, allowing for easy swapping (e.g., replacing `simplephysics` with a neural-network-based `jaxphysics`).
+- **Differentiable Programming**: By using JAX, Flax, and Equinox, the `jaxphysics` tesseract provides automatic differentiation (AD) endpoints. This allows for obtaining exact **Jacobians** via the Tesseract SDK, enabling gradient-based optimization and sensitivity analysis.
+- **Apache 2.0 Licensed**: All core libraries and this template are released under the Apache License 2.0, ensuring freedom for both academic and commercial use.
 
 ## Get Started
 
 ### Prerequisites
 
-- Python 3.10 or higher, ideally with a virtual environment (e.g. via `venv`, `conda`, or `uv`).
-- Working Docker setup for the current user ([Docker Desktop recommended](https://docs.pasteurlabs.ai/projects/tesseract-core/latest/content/introduction/installation.html#installing-docker)).
+- Python 3.10+
+- Docker (Desktop recommended)
+- `pip install -r requirements.txt`
 
-### Quickstart
+### Steps to Reproduce
 
-1. Create a new repository off this template and clone it
-   ```bash
-   $ git clone <your-repo-url>
-   $ cd <myrepo>
-   ```
+1.  **Clone and Setup**:
 
-2. Set up virtual environment (if not done already). `uv` or `conda` can also be used.
-   ```bash
-   $ python3 -m venv .venv
-   $ source .venv/bin/activate
-   ```
+    ```bash
+    git clone <your-repo-url>
+    cd tesseract-hackathon-template
+    python3 -m venv .venv
+    source .venv/bin/activate
+    pip install -r requirements.txt
+    ```
 
-3. Install dependencies
-   ```bash
-   $ pip install -r requirements.txt
-   ```
+2.  **Train Physics Models**:
+    Run the training script to generate weights for the neural network physics engines:
 
-4. Build Tesseracts
-   ```bash
-   $ ./buildall.sh
-   ```
+    ```bash
+    ./trainall.sh
+    ```
 
-5. Run the example pipeline
-   ```bash
-   $ python main.py
-   ```
+3.  **Build Tesseracts**:
+    Build the Docker images for all tesseracts:
 
-## Now go and build your own!
+    ```bash
+    ./buildall.sh
+    ```
 
-Some pointers to get you started:
+4.  **Run the Simulator**:
+    Launch the interactive CLI to visualize trajectories or optimize swing:
+    ```bash
+    python main.py
+    ```
 
-1. **Change Tesseract definitions**.
-     - Just update the code in `tesseracts/*`. You can add / remove Tesseracts at will, and `buildall.sh` will... build them all.
-     - Make sure to check out the [Tesseract docs](https://docs.pasteurlabs.ai/projects/tesseract-core/latest/content/creating-tesseracts/create.html) to learn how to adapt existing configuration and define Tesseracts from scratch.
-2. **Use gradients to perform optimization**.
-   - Exploit that Tesseract pipelines with AD endpoints are [end-to-end differentiable](https://docs.pasteurlabs.ai/projects/tesseract-core/latest/content/introduction/differentiable-programming.html).
-   - Check [showcases](https://si-tesseract.discourse.group/c/showcase/11) for inspiration, e.g. the [Rosenbrock optimization showcase](https://si-tesseract.discourse.group/t/jax-based-rosenbrock-function-minimization/48) for a minimal demo.
-3. **Deploy Tesseracts anywhere**.
-   - Since built Tesseracts are just Docker images, you can [deploy them virtually anywhere](https://docs.pasteurlabs.ai/projects/tesseract-core/latest/content/creating-tesseracts/deploy.html).
-   - This includes [HPC clusters via SLURM](https://si-tesseract.discourse.group/t/deploying-and-interacting-with-tesseracts-on-hpc-clusters-using-tesseract-runtime-serve/104).
-   - Have a look at [Tesseract Streamlit](https://github.com/pasteurlabs/tesseract-streamlit) that can turn Tesseracts into web apps.
-   - Show us how and where you run Tesseracts over the local network, on clusters, or in the cloud!
-4. **Happy Hacking!** 🚀
-   - Don't let these pointers constrain you. We're looking for creative solutions, so thinking out of the box is always appreciated.
-   - Have fun, and [reach out](https://si-tesseract.discourse.group/) if you need help.
+## Differentiable Pipeline
+
+The `simplephysics` and `jaxphysics` tesseracts implement standard AD endpoints:
+
+- `jacobian`: Full Jacobian matrix for sensitivity analysis.
+- `jacobian_vector_product` (JVP): Forward-mode AD.
+- `vector_jacobian_product` (VJP): Reverse-mode AD.
+
+These can be called via the Tesseract SDK:
+
+```python
+from tesseract_core import Tesseract
+
+physics = Tesseract.from_url("http://localhost:8001")
+inputs = {"notch_angle": 30.0, "reynolds_number": 5e5, "roughness": 0.8}
+jac = physics.jacobian(inputs, jac_inputs={"notch_angle"}, jac_outputs={"force_vector"})
+print(f"Sensitivity to seam angle: {jac}")
+```
 
 ## License
 
-Licensed under Apache License 2.0.
+This project is licensed under the **Apache License 2.0**. See the [LICENSE](LICENSE) file for details.
 
-All submissions must use the Apache License 2.0 to be eligible for the Tesseract Hackathon. See [LICENSE](LICENSE) file for details.
+## Contact
+
+Please use the [issues tracker](https://github.com/gpavanb1/deepswingr/issues) for any questions.
