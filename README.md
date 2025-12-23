@@ -1,16 +1,25 @@
 # DeepSwingr: A Differentiable Framework for Cricket Ball Swing Optimization
 
-<p align="center">
-  <img src="assets/logo.png" alt="DeepSwingr Logo" width="300"/>
-</p>
+<img src="assets/logo.png" alt="DeepSwingr Logo" width="300"/>
 
 A modular, differentiable simulation of cricket ball trajectory and swing using [Tesseract Core](https://github.com/pasteurlabs/tesseract-core) and [Tesseract-JAX](https://github.com/pasteurlabs/tesseract-jax).
 
+## Introduction to Ball Swing
+
+Cricket ball swing is a fascinating phenomenon driven by asymmetric fluid dynamics. By angling the seam of the ball relative to the airflow, a pressure differential is created between the two sides of the ball, resulting in a lateral force that causes the ball to "swing" in the air.
+
+<img src="assets/conventional_swing.png" alt="Conventional Swing" width="400"/>
+
+There are two primary types of swing:
+
+- **Conventional Swing**: As shown in the figure above, the ball typically swings in the direction the seam is pointing.
+- **Reverse Swing**: This occurs when the ball moves _towards_ the shinier side (opposite to the seam direction). This usually happens at higher velocities or as the ball becomes older and one side becomes significantly rougher, causing the boundary layer to transition to turbulence differently.
+
+Optimizing this swing involves finding the perfect balance between velocity, seam angle, and surface roughness. Traditional physics simulations can be computationally expensive; however, by leveraging differentiable fluid dynamics and ML proxies, we can rapidly explore the parameter space and use gradient-based optimization to find the "perfect delivery."
+
 ## System Architecture
 
-<p align="center">
-  <img src="assets/deepswingr_architecture.png" alt="DeepSwingr Logo" width="500"/>
-</p>
+<img src="assets/deepswingr_architecture.png" alt="DeepSwingr Architecture" width="600"/>
 
 The project follows a highly modular architecture where different physical components are isolated into independent **Tesseracts**:
 
