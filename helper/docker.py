@@ -126,30 +126,47 @@ def ensure_container(container_name: str, image_name: str,
             print(logs.stdout[-500:] if logs.stdout else "No logs")
 
 
-def ensure_simplephysics_container(network_name: str):
-    """Start simplephysics container if not already running"""
+# Configuration for physics backends
+PHYSICS_BACKENDS = {
+    "simplephysics": {
+        "container": "simplephysics",
+        "image": "simplephysics",
+        "port": 8000,
+        "url": "http://simplephysics:8000"
+    },
+    "jaxphysics": {
+        "container": "jaxphysics",
+        "image": "jaxphysics",
+        "port": 8001,
+        "url": "http://jaxphysics:8000"
+    }
+}
+
+
+def ensure_physics_container(backend_name: str, network_name: str):
+    """Start the specified physics backend container if not already running"""
+    if backend_name not in PHYSICS_BACKENDS:
+        raise ValueError(f"Unknown physics backend: {backend_name}")
+    
+    config = PHYSICS_BACKENDS[backend_name]
     ensure_container(
-        "simplephysics", "simplephysics", network_name, 8000)
+        config["container"], 
+        config["image"], 
+        network_name, 
+        config["port"]
+    )
 
 
-def ensure_jaxphysics_container(network_name: str):
-    """Start jaxphysics container if not already running"""
-    ensure_container("jaxphysics", "jaxphysics", network_name, 8001)
-
-
-
-
-def prepare_docker_environment(network_name: str, use_jaxphysics: bool = True):
+def prepare_docker_environment(network_name: str, backend_name: str = "simplephysics"):
     """Set up Docker environment including network and containers"""
     print("============================================================")
     print("  CRICKET BALL TRAJECTORY SIMULATION DEMO")
     print("============================================================")
 
     ensure_docker_network(network_name)
-    ensure_simplephysics_container(network_name)
-
-    if use_jaxphysics:
-        ensure_jaxphysics_container(network_name)
+    
+    # Let's just ensure the requested one.
+    ensure_physics_container(backend_name, network_name)
 
 
 def cleanup_containers():
@@ -172,27 +189,47 @@ def cleanup_containers():
     print("✓ Cleanup complete")
 
 
+def switch_backend(backend_name: str, network_name: str = "tesseract_network"):
+    """Switch the physics backend by resetting tesseracts and ensuring container."""
+    global _INTEGRATOR, _SWING, _OPTIMIZER
+    
+    if backend_name not in PHYSICS_BACKENDS:
+        raise ValueError(f"Unknown physics backend: {backend_name}")
+    
+    print(f"\n🔄 Switching physics backend to: {backend_name}")
+    
+    # Reset globals to force re-setup on next get_tesseracts() call
+    _INTEGRATOR = None
+    _SWING = None
+    _OPTIMIZER = None
+    
+    # Ensure the new container is running
+    ensure_physics_container(backend_name, network_name)
+    
+    return backend_name
+
+
 # Global tesseracts to avoid restarting containers on every call
 _INTEGRATOR = None
 _SWING = None
 _OPTIMIZER = None
 
 
-def get_tesseracts(network_name="tesseract_network"):
+def get_tesseracts(network_name="tesseract_network", backend_name="simplephysics"):
     """Get or setup tesseracts (singleton pattern)"""
     global _INTEGRATOR, _SWING, _OPTIMIZER
     if _INTEGRATOR is None:
         print("🔍 Starting Tesseracts (first time setup)...")
-        _INTEGRATOR, _SWING, _OPTIMIZER = setup_tesseracts(network_name)
+        _INTEGRATOR, _SWING, _OPTIMIZER = setup_tesseracts(network_name, backend_name)
     return _INTEGRATOR, _SWING, _OPTIMIZER
 
 
-def setup_tesseracts(network_name="tesseract_network"):
+def setup_tesseracts(network_name="tesseract_network", backend_name="simplephysics"):
     """Setup all tesseracts (integrator, swing, optimizer)"""
-    print("🚀 Setting up tesseracts...")
+    print(f"🚀 Setting up tesseracts with {backend_name} backend...")
 
     # Start physics backends
-    prepare_docker_environment(network_name, use_jaxphysics=False)
+    prepare_docker_environment(network_name, backend_name=backend_name)
 
     # Start tesseracts with external port mappings
     ensure_container("integrator", "integrator", network_name, 8002)

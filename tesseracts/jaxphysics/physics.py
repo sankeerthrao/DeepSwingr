@@ -15,7 +15,7 @@ Output: Force vector [Fx_drag, Fy_lift, Fz_side] in Newtons
 
 import jax
 import jax.numpy as jnp
-from jax import jit
+from jax import jit, random
 import flax.linen as nn
 from typing import Tuple, Dict
 

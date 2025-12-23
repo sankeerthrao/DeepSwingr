@@ -76,7 +76,8 @@ def optimize_swing(inputs: InputSchema) -> OutputSchema:
         # Prepare input for swing tesseract
         swing_inputs = {
             **inputs.fixed_variables,
-            opt_var: float(x)
+            opt_var: float(x),
+            "physics_url": inputs.physics_url
         }
 
         # Just a forward pass - much faster than a .jacobian() call

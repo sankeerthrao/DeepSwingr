@@ -18,6 +18,10 @@ class InputSchema(BaseModel):
         ..., description="Ball surface roughness [0.0, 1.0]")
     seam_angle: Differentiable[Float32] = Field(
         ..., description="Seam angle in degrees [-90.0, 90.0]")
+    physics_url: str = Field(
+        default="http://simplephysics:8000",
+        description="URL of physics backend"
+    )
 
 
 class OutputSchema(BaseModel):
@@ -37,7 +41,8 @@ def compute_final_deviation(
     initial_velocity,
     release_angle,
     roughness,
-    seam_angle
+    seam_angle,
+    physics_url="http://simplephysics:8000"
 ):
     """
     Compute final lateral deviation using AD-enabled tesseract calls.
@@ -49,7 +54,7 @@ def compute_final_deviation(
         "release_angle": release_angle,
         "roughness": roughness,
         "seam_angle": seam_angle,
-        "physics_url": "http://simplephysics:8000"
+        "physics_url": physics_url
     })
 
     # Extract y positions (lateral deviation)
@@ -68,7 +73,8 @@ def apply(inputs: InputSchema) -> OutputSchema:
         initial_velocity=inputs.initial_velocity,
         release_angle=inputs.release_angle,
         roughness=inputs.roughness,
-        seam_angle=inputs.seam_angle
+        seam_angle=inputs.seam_angle,
+        physics_url=inputs.physics_url
     )
 
     # Return final deviation
@@ -82,13 +88,15 @@ def apply_jit(inputs: dict) -> dict:
     release_angle = inputs["release_angle"]
     roughness = inputs["roughness"]
     seam_angle = inputs["seam_angle"]
+    physics_url = inputs.get("physics_url", "http://simplephysics:8000")
 
     # Call the computation function directly
     final_deviation = compute_final_deviation(
         initial_velocity=initial_velocity,
         release_angle=release_angle,
         roughness=roughness,
-        seam_angle=seam_angle
+        seam_angle=seam_angle,
+        physics_url=physics_url
     )
 
     return {"final_deviation": final_deviation}
