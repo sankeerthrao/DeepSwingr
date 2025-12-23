@@ -1,6 +1,8 @@
 # DeepSwingr: A Differentiable Framework for Cricket Ball Swing Optimization
 
-<img src="assets/logo.png" alt="DeepSwingr Logo" width="300"/>
+<p align="center">
+  <img src="assets/logo.png" alt="DeepSwingr Logo" width="300"/>
+</p>
 
 A modular, differentiable simulation of cricket ball trajectory and swing using [Tesseract Core](https://github.com/pasteurlabs/tesseract-core) and [Tesseract-JAX](https://github.com/pasteurlabs/tesseract-jax).
 
@@ -8,7 +10,9 @@ A modular, differentiable simulation of cricket ball trajectory and swing using 
 
 Cricket ball swing is a fascinating phenomenon driven by asymmetric fluid dynamics. By angling the seam of the ball relative to the airflow, a pressure differential is created between the two sides of the ball, resulting in a lateral force that causes the ball to "swing" in the air.
 
-<img src="assets/conventional_swing.png" alt="Conventional Swing" width="400"/>
+<p align="center">
+  <img src="assets/conventional_swing.png" alt="Conventional Swing" width="400"/>
+</p>
 
 There are two primary types of swing:
 
@@ -19,7 +23,9 @@ Optimizing this swing involves finding the perfect balance between velocity, sea
 
 ## System Architecture
 
-<img src="assets/deepswingr_architecture.png" alt="DeepSwingr Architecture" width="600"/>
+<p align="center">
+  <img src="assets/deepswingr_architecture.png" alt="DeepSwingr Architecture" width="600"/>
+</p>
 
 The project follows a highly modular architecture where different physical components are isolated into independent **Tesseracts**:
 
