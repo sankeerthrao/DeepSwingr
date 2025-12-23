@@ -1,6 +1,7 @@
 import jax
 import jax.numpy as jnp
 from typing import Any
+from functools import partial
 from pydantic import BaseModel, Field
 from tesseract_jax import apply_tesseract
 from tesseract_core import Tesseract
@@ -36,7 +37,7 @@ class OutputSchema(BaseModel):
 integrator_tesseract = Tesseract.from_url("http://integrator:8000")
 
 
-@jax.jit
+@partial(jax.jit, static_argnums=(4,))
 def compute_final_deviation(
     initial_velocity,
     release_angle,

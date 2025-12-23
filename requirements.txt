@@ -2,3 +2,4 @@ tesseract-core
 jax[cpu]
 plotly
 matplotlib
+jax-cfd
