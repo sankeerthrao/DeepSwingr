@@ -80,14 +80,6 @@ The `trainall.sh` script automates the generation of these ML proxies. There are
 1.  Runs a training loop where the neural network is optimized to match the forces computed by the CFD solver.
 2.  Saves the learned weights as `.msgpack` files, which are then packaged into the Tesseracts for high-speed inference.
 
-<p align="center">
-  <img src="assets/sample_trajectory.png" width="45%" />
-  <img src="assets/sample_optimal_angle.png" width="45%" />
-</p>
-<p align="center">
-  <i>`jaxphysics`-Based Results Obtained for (a) Sample Trajectory and (b) Optimal Angle</i>
-</p>
-
 ### Differentiable Forward Pass
 
 A critical advantage of this approach is that the forward pass of our ML models is built using **Flax**, **Equinox**, and **Diffrax**. Because these libraries are designed for differentiable programming, the entire Tesseract pipeline remains **end-to-end differentiable**.
@@ -142,6 +134,16 @@ When you call `.jacobian()` or `.vjp()` on a Tesseract, the gradients are propag
     ```bash
     python main.py
     ```
+
+The following results were obtained using the `jaxphysics` model.
+
+<p align="center">
+  <img src="assets/sample_trajectory.png" width="45%" />
+  <img src="assets/sample_optimal_angle.png" width="45%" />
+</p>
+<p align="center">
+  <i>`jaxphysics`-Based Results Obtained for (a) Sample Trajectory and (b) Optimal Angle</i>
+</p>
 
 ## Differentiable Pipeline
 
