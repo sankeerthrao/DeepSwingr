@@ -1,5 +1,5 @@
-# DeepSwingr - Pure JAX (No Tesseract!)
-# Install with: pip install -r requirements.txt
+# DeepSwingr - Pure JAX Edition
+# Install: pip install -r requirements.txt
 
 # Core JAX stack
 jax[cpu]>=0.4.20
@@ -11,6 +11,10 @@ matplotlib>=3.7.0
 plotly>=5.18.0
 numpy>=1.24.0
 
-# Optional: For Modal/remote deployment
+# API Server (optional)
+fastapi>=0.109.0
+uvicorn>=0.27.0
+
+# Remote deployment (optional)
 # modal>=0.56.0
 

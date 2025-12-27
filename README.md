@@ -63,16 +63,33 @@ swing_cm = compute_swing(35.0, 5.0, 0.8, 30.0, "jaxphysics")
 optimal_angle, max_swing = optimize_seam_angle(35.0, 5.0, 0.8, "out", "jaxphysics")
 ```
 
-## Remote Deployment
+## API Server
 
-For remote compute options, see `deploy/README.md`:
+Run locally with FastAPI:
 
 ```bash
-# Modal (serverless)
+# Start server
+uvicorn server:app --reload --port 8000
+
+# Test endpoints
+curl "http://localhost:8000/simulate?velocity=35&seam_angle=30"
+curl "http://localhost:8000/optimize" -X POST -H "Content-Type: application/json" \
+     -d '{"initial_velocity": 35, "roughness": 0.8, "swing_type": "out"}'
+
+# Interactive docs
+open http://localhost:8000/docs
+```
+
+## Remote Deployment
+
+For cloud deployment options, see `deploy/README.md`:
+
+```bash
+# Modal (serverless - easiest)
 pip install modal
 modal run deploy/modal_app.py
 
-# Docker
+# Docker + any cloud
 docker build -t deepswingr -f deploy/Dockerfile .
 docker run -p 8000:8000 deepswingr
 ```
