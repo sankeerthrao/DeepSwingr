@@ -6,7 +6,7 @@ from simulator import simulate_trajectory, compute_swing, optimize_seam_angle
 from plotter.plt import plot_trajectory_3d
 
 print("="*60)
-print("  🏏 DeepSwingr Demo - Pure JAX (No Docker!)")
+print("  🏏 DeepSwingr Demo - Pure JAX Edition")
 print("="*60)
 
 velocity, release_angle, roughness, seam_angle = 35.0, 5.0, 0.8, 30.0

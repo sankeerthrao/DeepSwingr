@@ -1,19 +1,8 @@
-# 🏏 DeepSwingr - Pure JAX
+# 🏏 DeepSwingr - Pure JAX Edition
 
-**Cricket Ball Swing Simulation - No Docker, No Tesseract, No Bullshit!**
+A differentiable cricket ball swing simulation using JAX, Flax, and Diffrax.
 
-This is a clean rewrite of [DeepSwingr](https://github.com/gpavanb1/DeepSwingr) that removes all containerization overhead while keeping the same physics accuracy.
-
-## Why This Version?
-
-| Original (Tesseract) | This Version (Pure JAX) |
-|---------------------|------------------------|
-| 5 Docker containers | 0 containers |
-| HTTP calls per ODE step | Direct function calls |
-| ~500ms per simulation | ~5ms per simulation |
-| Complex setup | `pip install -r requirements.txt` |
-
-**~100x faster** because we removed the HTTP/serialization overhead from the ODE inner loop.
+Based on [gpavanb1/DeepSwingr](https://github.com/gpavanb1/DeepSwingr) - refactored to run as pure Python/JAX without containerization.
 
 ## Quick Start
 
@@ -26,35 +15,31 @@ python demo_run.py
 
 # Interactive CLI
 python main.py
-
-# Test physics models
-python physics.py
-python simulator.py
 ```
 
 ## Project Structure
 
 ```
-DeepSwingr-clean/
+DeepSwingr/
 ├── physics.py          # Neural network physics models
 ├── simulator.py        # Trajectory simulation (Diffrax)
-├── main.py            # Interactive CLI
-├── demo_run.py        # Demo script
-├── weights/           # Pre-trained model weights
-│   ├── jaxphysics_weights.msgpack     # 138KB - JAX-CFD trained
-│   └── simplephysics_weights.msgpack  # 36KB - Simpler model
-├── plotter/           # Visualization (unchanged)
-└── deploy/            # Remote deployment options
-    ├── modal_app.py   # Serverless (Modal.com)
-    ├── Dockerfile     # Container deployment
-    └── README.md      # Deployment guide
+├── main.py             # Interactive CLI
+├── demo_run.py         # Demo script
+├── weights/            # Pre-trained model weights
+│   ├── jaxphysics_weights.msgpack     # Trained on JAX-CFD
+│   └── simplephysics_weights.msgpack  # Simpler model
+├── plotter/            # Visualization
+└── deploy/             # Remote deployment options
+    ├── modal_app.py    # Serverless (Modal.com)
+    ├── Dockerfile      # Container deployment
+    └── README.md       # Deployment guide
 ```
 
 ## Physics Backends
 
-1. **jaxphysics** (default): Larger NN trained on JAX-CFD simulations
-2. **simplephysics**: Smaller NN, faster but less accurate  
-3. **analytical**: Empirical formulas (no weights needed)
+1. **jaxphysics** (default): Larger neural network trained on JAX-CFD simulations
+2. **simplephysics**: Smaller neural network, faster inference
+3. **analytical**: Empirical formulas based on Mehta (1985)
 
 ## Usage
 
@@ -80,31 +65,24 @@ optimal_angle, max_swing = optimize_seam_angle(35.0, 5.0, 0.8, "out", "jaxphysic
 
 ## Remote Deployment
 
-If you need remote compute (you probably don't - inference is very light):
+For remote compute options, see `deploy/README.md`:
 
 ```bash
-# Modal (simplest)
+# Modal (serverless)
 pip install modal
 modal run deploy/modal_app.py
 
 # Docker
 docker build -t deepswingr -f deploy/Dockerfile .
 docker run -p 8000:8000 deepswingr
-curl "http://localhost:8000/simulate?velocity=35&seam_angle=30"
 ```
 
-See `deploy/README.md` for more options (AWS, GCP, Ray).
+## Credits
 
-## The Key Insight
-
-The original Tesseract version containerized everything for "dependency isolation", but:
-
-1. **Training** (heavy CFD) → One-time, already done, weights saved
-2. **Inference** (neural network) → Just matrix multiplies, runs anywhere
-
-The trained weights are only **138KB**. You don't need 5 Docker containers to multiply matrices.
+- Original implementation: [gpavanb1/DeepSwingr](https://github.com/gpavanb1/DeepSwingr)
+- Physics models trained using [JAX-CFD](https://github.com/google/jax-cfd)
+- Empirical formulas based on Mehta (1985), Barton (1982)
 
 ## License
 
-Apache 2.0 (same as original)
-
+Apache 2.0

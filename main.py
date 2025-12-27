@@ -31,7 +31,7 @@ def plot_optimal(r=0.8, a=5.0, swing_type="out", speed_range=[30, 40], n=5, back
 def main():
     backend = "jaxphysics"
     print("\n" + "="*50)
-    print("  🏏 DeepSwingr - Pure JAX (No Docker!)")
+    print("  🏏 DeepSwingr - Pure JAX Edition")
     print("="*50)
     
     while True:

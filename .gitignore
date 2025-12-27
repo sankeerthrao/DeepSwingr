@@ -55,3 +55,4 @@ tesseract_cache/
 
 # Logs
 *.log
+*.html
